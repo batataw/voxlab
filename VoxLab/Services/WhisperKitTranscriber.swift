@@ -1,3 +1,4 @@
+import CoreML
 import Foundation
 import os
 import Synchronization
@@ -39,6 +40,14 @@ actor WhisperKitTranscriber: Transcriber {
     private static let repository = "argmaxinc/whisperkit-coreml"
     /// Part de la barre de progression réservée à la préparation du modèle.
     private static let preparationShare = 0.1
+    /// Encodeur et décodeur sur le GPU : sur M1, l'ANE (choix par défaut de WhisperKit) échoue
+    /// par intermittence avec large-v3 (« Program Inference error ») et des blocs ressortent vides,
+    /// jusqu'à une transcription entièrement vide. Le GPU du M1 Max est aussi plus rapide.
+    static let computeOptions = ModelComputeOptions(
+        melCompute: .cpuAndGPU,
+        audioEncoderCompute: .cpuAndGPU,
+        textDecoderCompute: .cpuAndGPU
+    )
     /// Écrit après un téléchargement complet : un dossier sans ce marqueur peut être partiel.
     private static let completionMarker = ".voxlab-complete"
 
@@ -148,6 +157,7 @@ actor WhisperKitTranscriber: Transcriber {
         do {
             let pipe = try await WhisperKit(WhisperKitConfig(
                 modelFolder: folder.path(percentEncoded: false),
+                computeOptions: Self.computeOptions,
                 verbose: false,
                 logLevel: .error,
                 prewarm: true,

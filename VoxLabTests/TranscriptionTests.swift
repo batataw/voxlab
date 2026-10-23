@@ -1,3 +1,4 @@
+import CoreML
 import Foundation
 import Synchronization
 import Testing
@@ -73,6 +74,13 @@ struct TranscriptionTests {
         let call = try #require(transcriber.calls.withLock { $0.first })
         #expect(call.0.lastPathComponent == JobArtifact.vocals)
         #expect(call.1 == .fast)
+    }
+
+    @Test("Encodeur et décodeur hors Neural Engine (blocs perdus sur M1)")
+    func computeUnits() {
+        let options = WhisperKitTranscriber.computeOptions
+        #expect(options.audioEncoderCompute == .cpuAndGPU)
+        #expect(options.textDecoderCompute == .cpuAndGPU)
     }
 
     @Test("Piste vocale absente")
