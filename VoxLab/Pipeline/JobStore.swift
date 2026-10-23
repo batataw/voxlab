@@ -63,6 +63,9 @@ final class SwiftDataJobStore: JobStore {
         if let language = output.detectedLanguage {
             job.detectedLanguage = language
         }
+        if let title = output.title {
+            job.title = title
+        }
         if let text = output.text {
             switch step {
             case .transcribe: job.rawTranscript = text

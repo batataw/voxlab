@@ -16,7 +16,7 @@ nonisolated struct ImportStep: PipelineStep {
             guard let urlImporter else { throw PipelineError.unsupportedSource("YouTube") }
             importer = urlImporter
         }
-        try await importer.importSource(context.source, to: context.artifact(JobArtifact.source), onProgress: onProgress)
-        return StepOutput()
+        let metadata = try await importer.importSource(context.source, to: context.artifact(JobArtifact.source), onProgress: onProgress)
+        return StepOutput(title: metadata.title)
     }
 }

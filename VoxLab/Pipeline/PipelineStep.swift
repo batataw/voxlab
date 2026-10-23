@@ -19,6 +19,8 @@ nonisolated struct StepOutput: Sendable, Equatable {
     /// Texte produit, copié dans SwiftData (transcription, correction, traduction).
     var text: String?
     var detectedLanguage: String?
+    /// Titre découvert à l'import (vidéo YouTube), qui remplace le titre provisoire du job.
+    var title: String?
 }
 
 nonisolated protocol PipelineStep: Sendable {

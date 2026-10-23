@@ -153,8 +153,11 @@ struct FileImporterTests {
             return ProcessResult(exitCode: 0, stdout: "", stderr: "")
         }
         let destination = dir.appending(path: JobArtifact.source)
+        let progress = Mutex<[Double]>([])
 
-        try await FileImporter(runner: runner, toolPaths: { paths }).importSource(.file(input), to: destination) { _ in }
+        _ = try await FileImporter(runner: runner, toolPaths: { paths }).importSource(.file(input), to: destination) { value in
+            progress.withLock { $0.append(value) }
+        }
 
         let arguments = try #require(runner.requests.withLock { $0.first }).arguments
         #expect(argument(after: "-i", in: arguments) == input.path(percentEncoded: false))
@@ -162,6 +165,7 @@ struct FileImporterTests {
         #expect(argument(after: "-ac", in: arguments) == "2")
         #expect(arguments.last?.hasSuffix("source.partial.wav") == true)
         #expect(try String(contentsOf: destination, encoding: .utf8) == "wav")
+        #expect(progress.withLock { $0 }.last == 1)
         #expect(try FileManager.default.contentsOfDirectory(atPath: dir.path(percentEncoded: false)).sorted() == ["chanson.MP3", "source.wav"])
     }
 
@@ -177,7 +181,7 @@ struct FileImporterTests {
         let destination = dir.appending(path: JobArtifact.source)
 
         await #expect(throws: FileImportError.conversionFailed("Invalid data found when processing input")) {
-            try await FileImporter(runner: runner, toolPaths: { paths }).importSource(.file(input), to: destination) { _ in }
+            _ = try await FileImporter(runner: runner, toolPaths: { paths }).importSource(.file(input), to: destination) { _ in }
         }
         #expect(!FileManager.default.fileExists(atPath: destination.path(percentEncoded: false)))
     }
@@ -192,10 +196,10 @@ struct FileImporterTests {
         let destination = dir.appending(path: JobArtifact.source)
 
         await #expect(throws: FileImportError.unsupportedFormat("mov")) {
-            try await importer.importSource(.file(video), to: destination) { _ in }
+            _ = try await importer.importSource(.file(video), to: destination) { _ in }
         }
         await #expect(throws: FileImportError.sourceMissing("/nope/a.mp3")) {
-            try await importer.importSource(.file(URL(filePath: "/nope/a.mp3")), to: destination) { _ in }
+            _ = try await importer.importSource(.file(URL(filePath: "/nope/a.mp3")), to: destination) { _ in }
         }
     }
 }
@@ -229,7 +233,7 @@ struct AudioIntegrationTests {
 
         let source = dir.appending(path: JobArtifact.source)
         let importProgress = Mutex<[Double]>([])
-        try await FileImporter(runner: runner, toolPaths: { paths })
+        _ = try await FileImporter(runner: runner, toolPaths: { paths })
             .importSource(.file(input), to: source) { value in importProgress.withLock { $0.append(value) } }
         #expect(FileManager.default.fileExists(atPath: source.path(percentEncoded: false)))
         #expect(importProgress.withLock { $0 }.last == 1)

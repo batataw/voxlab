@@ -8,6 +8,7 @@ struct NewJobView: View {
     @Environment(JobController.self) private var controller
     @Environment(\.dismiss) private var dismiss
     @State private var fileURL: URL?
+    @State private var urlText = ""
     @State private var targetLanguage = SupportedLanguage.fr
     @State private var isTargeted = false
     @State private var isPickingFile = false
@@ -19,6 +20,21 @@ struct NewJobView: View {
                 .font(.title2.bold())
 
             dropZone
+
+            HStack {
+                Image(systemName: "play.rectangle")
+                    .foregroundStyle(.secondary)
+                TextField("…ou collez une URL YouTube", text: $urlText)
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: urlText) {
+                        if !urlText.isEmpty { fileURL = nil }
+                    }
+            }
+            if !urlText.isEmpty, youtubeURL == nil {
+                Text("URL YouTube non reconnue (youtube.com ou youtu.be).")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
 
             Picker("Langue cible", selection: $targetLanguage) {
                 ForEach(SupportedLanguage.allCases) { language in
@@ -32,12 +48,15 @@ struct NewJobView: View {
                 Button("Annuler", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
                 Button("Lancer") {
-                    guard let fileURL else { return }
-                    onCreated(controller.createJob(fileURL: fileURL, targetLanguage: targetLanguage))
+                    if let fileURL {
+                        onCreated(controller.createJob(fileURL: fileURL, targetLanguage: targetLanguage))
+                    } else if let youtubeURL {
+                        onCreated(controller.createJob(youtubeURL: youtubeURL, targetLanguage: targetLanguage))
+                    }
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(fileURL == nil)
+                .disabled(fileURL == nil && youtubeURL == nil)
             }
         }
         .padding(20)
@@ -83,6 +102,10 @@ struct NewJobView: View {
         } isTargeted: { isTargeted = $0 }
     }
 
+    private var youtubeURL: URL? {
+        YouTubeURL.parse(urlText)
+    }
+
     @discardableResult
     private func accept(_ url: URL) -> Bool {
         guard FileImporter.supportedExtensions.contains(url.pathExtension.lowercased()) else {
@@ -90,6 +113,7 @@ struct NewJobView: View {
             return false
         }
         rejectionMessage = nil
+        urlText = ""
         fileURL = url
         return true
     }

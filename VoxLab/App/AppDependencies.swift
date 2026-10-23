@@ -24,7 +24,7 @@ struct AppDependencies {
 
         let pipeline = PipelineRunner(
             steps: [
-                ImportStep(fileImporter: FileImporter(runner: runner, toolPaths: toolPaths), urlImporter: nil),
+                ImportStep(fileImporter: FileImporter(runner: runner, toolPaths: toolPaths), urlImporter: YtDlpImporter(runner: runner, toolPaths: toolPaths)),
                 SeparateStep(separator: DemucsSeparator(runner: runner, toolPaths: toolPaths)),
                 TranscribeStep(transcriber: WhisperKitTranscriber()),
                 CorrectStep(corrector: LLMCorrector(provider: llmProvider)),

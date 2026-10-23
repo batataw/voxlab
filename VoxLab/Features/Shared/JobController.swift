@@ -34,6 +34,21 @@ final class JobController {
         return job
     }
 
+    /// Crée un job à partir d'une URL YouTube ; le titre définitif vient de yt-dlp à l'import.
+    @discardableResult
+    func createJob(youtubeURL: URL, targetLanguage: SupportedLanguage) -> Job {
+        let job = Job(
+            title: "YouTube – \(youtubeURL.absoluteString)",
+            sourceKind: .youtube,
+            sourceReference: youtubeURL.absoluteString,
+            targetLanguage: targetLanguage.rawValue
+        )
+        context.insert(job)
+        save()
+        start(job, scope: .resume)
+        return job
+    }
+
     func resume(_ job: Job) {
         start(job, scope: .resume)
     }
