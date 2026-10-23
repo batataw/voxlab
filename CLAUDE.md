@@ -17,7 +17,7 @@ App macOS perso, **hors prod**, 100 % gratuite et locale :
 | Couche | Choix |
 |---|---|
 | UI | SwiftUI (macOS), `NavigationSplitView` avec l'historique à gauche et le détail du job à droite |
-| Persistance | SwiftData (métadonnées et textes) ; fichiers audio sur disque |
+| Persistance | SwiftData (métadonnées et textes) dans `~/Library/Application Support/VoxLab/VoxLab.store` (jamais le `default.store` par défaut, partagé entre apps hors sandbox) ; fichiers audio sur disque ; modèles Whisper dans `…/VoxLab/models` |
 | Concurrence | Swift Concurrency (`async/await`, `actor`), Swift 6 strict concurrency |
 | Import YouTube | `yt-dlp` + `ffmpeg` (CLI, Homebrew) |
 | Isolation voix | Demucs `htdemucs_ft` par défaut (meilleure qualité, environ 3,5× plus lent : ≈ 62 s contre 18 s pour 3 min d'audio sur M1 Max), `htdemucs` en mode rapide ; `--two-stems vocals` (CLI Python, venv dédié) |

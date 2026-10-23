@@ -20,6 +20,7 @@ struct AppDependencies {
             steps: [
                 ImportStep(fileImporter: FileImporter(runner: runner, toolPaths: toolPaths), urlImporter: nil),
                 SeparateStep(separator: DemucsSeparator(runner: runner, toolPaths: toolPaths)),
+                TranscribeStep(transcriber: WhisperKitTranscriber()),
             ],
             store: store,
             storage: storage

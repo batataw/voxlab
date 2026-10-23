@@ -25,6 +25,11 @@ struct JobDetailView: View {
                 .background(.background.secondary, in: .rect(cornerRadius: 10))
 
                 audioSection
+
+                TranscriptTabsView(job: job, isEditable: !isRunning)
+                    .padding(12)
+                    .background(.background.secondary, in: .rect(cornerRadius: 10))
+                    .id(job.id)
             }
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -53,6 +58,11 @@ struct JobDetailView: View {
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
                 .textSelection(.enabled)
+            if let language = job.detectedLanguage {
+                Text("Langue détectée : \(Locale.current.localizedString(forLanguageCode: language) ?? language)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 

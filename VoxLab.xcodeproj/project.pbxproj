@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		7D69FD70308B640B004E2123 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7D69FD71308B640B004E2123 /* WhisperKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		7D69FD67308B640B004E2123 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -39,6 +43,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7D69FD70308B640B004E2123 /* WhisperKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +95,7 @@
 			);
 			name = VoxLab;
 			packageProductDependencies = (
+				7D69FD71308B640B004E2123 /* WhisperKit */,
 			);
 			productName = VoxLab;
 			productReference = 7D69FD44308B640B004E2123 /* VoxLab.app */;
@@ -146,6 +152,9 @@
 			);
 			mainGroup = 7D69FD3B308B640B004E2123;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				7D69FD72308B640B004E2123 /* XCRemoteSwiftPackageReference "WhisperKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7D69FD45308B640B004E2123 /* Products */;
 			projectDirPath = "";
@@ -451,6 +460,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		7D69FD72308B640B004E2123 /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7D69FD71308B640B004E2123 /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7D69FD72308B640B004E2123 /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7D69FD3C308B640B004E2123 /* Project object */;
 }

@@ -40,9 +40,26 @@ struct VoxLabApp: App {
         }
     }
 
+    /// Sans sandbox, l'emplacement par défaut (`Application Support/default.store`) est partagé
+    /// avec les autres apps : la base a donc son propre fichier.
+    static var storeURL: URL {
+        URL.applicationSupportDirectory
+            .appending(path: "VoxLab", directoryHint: .isDirectory)
+            .appending(path: "VoxLab.store")
+    }
+
     private static func makeModelContainer() -> ModelContainer {
+        // L'app sert d'hôte aux tests : elle ne doit pas toucher à la vraie base.
+        let isTestHost = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
         do {
-            return try ModelContainer(for: Job.self, StepRun.self)
+            let configuration: ModelConfiguration
+            if isTestHost {
+                configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+            } else {
+                try FileManager.default.createDirectory(at: storeURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                configuration = ModelConfiguration(url: storeURL)
+            }
+            return try ModelContainer(for: Job.self, StepRun.self, configurations: configuration)
         } catch {
             fatalError("Impossible d'ouvrir la base SwiftData : \(error)")
         }

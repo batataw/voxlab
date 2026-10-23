@@ -60,6 +60,26 @@ final class JobController {
         save()
     }
 
+    /// Édition manuelle d'un texte : mise à jour en base et dans le fichier.
+    /// Modifier le texte corrigé rend la traduction obsolète.
+    func updateText(_ text: String, kind: TranscriptKind, of job: Job) {
+        guard job.text(kind) != text else { return }
+        switch kind {
+        case .raw: job.rawTranscript = text
+        case .corrected:
+            job.correctedTranscript = text
+            if job.translation != nil { job.isTranslationStale = true }
+        case .translated: job.translation = text
+        }
+        do {
+            let directory = try storage.prepareDirectory(for: job.id)
+            try text.write(to: directory.appending(path: job.artifactName(for: kind)), atomically: true, encoding: .utf8)
+        } catch {
+            Self.logger.error("Écriture du texte impossible : \(error.localizedDescription, privacy: .public)")
+        }
+        save()
+    }
+
     /// URL d'un artefact du job s'il existe sur disque.
     func existingArtifact(_ name: String, of job: Job) -> URL? {
         let url = storage.directory(for: job.id).appending(path: name)
