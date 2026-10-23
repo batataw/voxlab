@@ -4,12 +4,19 @@ import SwiftUI
 struct HistoryView: View {
     @Binding var selection: PersistentIdentifier?
     @Query(sort: \Job.createdAt, order: .reverse) private var jobs: [Job]
+    @Environment(JobController.self) private var controller
 
     var body: some View {
         List(selection: $selection) {
             ForEach(jobs) { job in
                 HistoryRow(job: job)
                     .tag(job.persistentModelID)
+                    .contextMenu {
+                        Button("Supprimer le job et ses fichiers", role: .destructive) {
+                            if selection == job.persistentModelID { selection = nil }
+                            controller.delete(job)
+                        }
+                    }
             }
         }
         .overlay {

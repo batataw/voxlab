@@ -64,7 +64,7 @@ nonisolated enum ProcessRunnerError: LocalizedError, Equatable {
     }
 }
 
-protocol ProcessRunning: Sendable {
+nonisolated protocol ProcessRunning: Sendable {
     func run(
         _ request: ProcessRequest,
         onEvent: @escaping @Sendable (ProcessEvent) -> Void

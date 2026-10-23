@@ -6,6 +6,16 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		7D69FD67308B640B004E2123 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7D69FD3C308B640B004E2123 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7D69FD43308B640B004E2123;
+			remoteInfo = VoxLab;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		7D69FD44308B640B004E2123 /* VoxLab.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoxLab.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7D69FD61308B640B004E2123 /* VoxLabTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoxLabTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -110,24 +120,6 @@
 		};
 /* End PBXNativeTarget section */
 
-/* Begin PBXContainerItemProxy section */
-		7D69FD67308B640B004E2123 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 7D69FD3C308B640B004E2123 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 7D69FD43308B640B004E2123;
-			remoteInfo = VoxLab;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXTargetDependency section */
-		7D69FD66308B640B004E2123 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 7D69FD43308B640B004E2123 /* VoxLab */;
-			targetProxy = 7D69FD67308B640B004E2123 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin PBXProject section */
 		7D69FD3C308B640B004E2123 /* Project object */ = {
 			isa = PBXProject;
@@ -198,6 +190,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7D69FD66308B640B004E2123 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7D69FD43308B640B004E2123 /* VoxLab */;
+			targetProxy = 7D69FD67308B640B004E2123 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		7D69FD4D308B640D004E2123 /* Debug */ = {

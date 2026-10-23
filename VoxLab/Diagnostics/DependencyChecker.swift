@@ -73,7 +73,7 @@ nonisolated struct DependencyReport: Sendable, Equatable, Identifiable {
     var id: Dependency { dependency }
 }
 
-protocol DependencyChecking: Sendable {
+nonisolated protocol DependencyChecking: Sendable {
     func check(_ dependency: Dependency, paths: ToolPaths) async -> DependencyReport
 }
 

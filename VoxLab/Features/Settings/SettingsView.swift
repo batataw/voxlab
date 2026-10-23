@@ -5,9 +5,22 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.ytDlpPath) private var ytDlpPath = ToolPaths.defaults.ytDlp
     @AppStorage(SettingsKey.demucsPath) private var demucsPath = ToolPaths.defaults.demucs
     @AppStorage(SettingsKey.ollamaPath) private var ollamaPath = ToolPaths.defaults.ollama
+    @AppStorage(SettingsKey.quality) private var quality = QualityMode.max
 
     var body: some View {
         Form {
+            Section {
+                Picker("Qualité", selection: $quality) {
+                    ForEach(QualityMode.allCases, id: \.self) { mode in
+                        Text(mode.displayName).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+            } footer: {
+                Text("Rapide : htdemucs, large-v3-turbo, Foundation Models. Max : htdemucs_ft, large-v3, Ollama.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Section("Binaires externes") {
                 TextField("ffmpeg", text: $ffmpegPath)
                 TextField("yt-dlp", text: $ytDlpPath)

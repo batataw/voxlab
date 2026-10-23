@@ -6,6 +6,26 @@ nonisolated enum SettingsKey {
     static let ytDlpPath = "toolPath.ytDlp"
     static let demucsPath = "toolPath.demucs"
     static let ollamaPath = "toolPath.ollama"
+    static let quality = "pipeline.quality"
+}
+
+/// Compromis vitesse / qualité appliqué à toutes les étapes.
+nonisolated enum QualityMode: String, CaseIterable, Sendable {
+    /// htdemucs, large-v3-turbo, Foundation Models.
+    case fast
+    /// htdemucs_ft, large-v3, Ollama.
+    case max
+
+    var displayName: String {
+        switch self {
+        case .fast: "Rapide"
+        case .max: "Max"
+        }
+    }
+
+    static func load(from defaults: UserDefaults = .standard) -> QualityMode {
+        defaults.string(forKey: SettingsKey.quality).flatMap(QualityMode.init(rawValue:)) ?? .max
+    }
 }
 
 /// Chemins des binaires externes, configurables dans Réglages.

@@ -8,18 +8,26 @@ struct VoxLabApp: App {
     @State private var diagnostics: DiagnosticsViewModel
 
     init() {
-        let dependencies = AppDependencies.live()
+        let modelContainer = Self.makeModelContainer()
+        let dependencies = AppDependencies.live(modelContext: modelContainer.mainContext)
         self.dependencies = dependencies
-        self.modelContainer = Self.makeModelContainer()
+        self.modelContainer = modelContainer
         _diagnostics = State(initialValue: DiagnosticsViewModel(checker: dependencies.dependencyChecker))
     }
 
     var body: some Scene {
         WindowGroup {
             RootView(diagnostics: diagnostics)
+                .environment(dependencies.jobController)
         }
         .modelContainer(modelContainer)
         .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("Nouveau job…") {
+                    NotificationCenter.default.post(name: .showNewJob, object: nil)
+                }
+                .keyboardShortcut("n")
+            }
             CommandGroup(after: .appSettings) {
                 Button("Diagnostic des dépendances…") {
                     NotificationCenter.default.post(name: .showDiagnostics, object: nil)
@@ -43,4 +51,5 @@ struct VoxLabApp: App {
 
 extension Notification.Name {
     static let showDiagnostics = Notification.Name("VoxLab.showDiagnostics")
+    static let showNewJob = Notification.Name("VoxLab.showNewJob")
 }

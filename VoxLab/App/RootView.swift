@@ -6,6 +6,7 @@ struct RootView: View {
 
     @State private var selectedJobID: PersistentIdentifier?
     @State private var isShowingDiagnostics = false
+    @State private var isShowingNewJob = false
 
     var body: some View {
         NavigationSplitView {
@@ -15,6 +16,10 @@ struct RootView: View {
             JobDetailContainer(jobID: selectedJobID)
         }
         .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Button("Nouveau job", systemImage: "plus") { isShowingNewJob = true }
+                    .help("Nouveau job (⌘N)")
+            }
             ToolbarItem {
                 Button {
                     isShowingDiagnostics = true
@@ -26,6 +31,12 @@ struct RootView: View {
         }
         .sheet(isPresented: $isShowingDiagnostics) {
             DiagnosticsView(viewModel: diagnostics)
+        }
+        .sheet(isPresented: $isShowingNewJob) {
+            NewJobView { job in selectedJobID = job.persistentModelID }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showNewJob)) { _ in
+            isShowingNewJob = true
         }
         .task {
             await diagnostics.refresh()
