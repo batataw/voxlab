@@ -10,16 +10,21 @@ struct RootView: View {
             Sidebar(navigation: navigation, diagnostics: diagnostics)
                 .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 260)
         } detail: {
-            switch navigation.section {
-            case .newJob:
-                NewJobPage(navigation: navigation)
-            case .history:
-                HistoryPage(navigation: navigation)
-            case .diagnostics:
-                DiagnosticsPage(viewModel: diagnostics)
-            case .settings:
-                SettingsPage()
+            // L'identité par section force la reconstruction de la colonne : sans elle, SwiftUI
+            // peut garder affichée la NavigationStack de l'Historique quand on change de section.
+            Group {
+                switch navigation.section {
+                case .newJob:
+                    NewJobPage(navigation: navigation)
+                case .history:
+                    HistoryPage(navigation: navigation)
+                case .diagnostics:
+                    DiagnosticsPage(viewModel: diagnostics)
+                case .settings:
+                    SettingsPage()
+                }
             }
+            .id(navigation.section)
         }
         .task {
             await diagnostics.refresh()
