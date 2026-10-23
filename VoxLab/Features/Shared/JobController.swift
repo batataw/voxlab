@@ -80,6 +80,18 @@ final class JobController {
         save()
     }
 
+    /// Change la langue cible ; une traduction existante devient obsolète.
+    func setTargetLanguage(_ language: SupportedLanguage, of job: Job) {
+        guard job.targetLanguage != language.rawValue else { return }
+        job.targetLanguage = language.rawValue
+        if job.translation != nil { job.isTranslationStale = true }
+        save()
+    }
+
+    var translatesViaLLM: Bool {
+        UserDefaults.standard.bool(forKey: SettingsKey.translateViaLLM)
+    }
+
     /// URL d'un artefact du job s'il existe sur disque.
     func existingArtifact(_ name: String, of job: Job) -> URL? {
         let url = storage.directory(for: job.id).appending(path: name)

@@ -22,7 +22,7 @@ final class MockLLMProvider: LLMProvider {
 
 /// Partie « texte à corriger » d'un message utilisateur.
 private func textToCorrect(in user: String) -> String {
-    user.components(separatedBy: "Texte à corriger :\n").last ?? user
+    user.components(separatedBy: "Texte à traiter :\n").last ?? user
 }
 
 @Suite("TextChunker")
@@ -98,9 +98,9 @@ struct LLMCorrectorTests {
 
     @Test("Nettoie raisonnement, blocs de code et guillemets")
     func cleansResponse() {
-        #expect(LLMCorrector.clean("<think>je réfléchis</think>\nIl pleut") == "Il pleut")
-        #expect(LLMCorrector.clean("```text\nIl pleut\nsur la ville\n```") == "Il pleut\nsur la ville")
-        #expect(LLMCorrector.clean("\"Il pleut\"") == "Il pleut")
+        #expect(LLMChunkedRewriter.clean("<think>je réfléchis</think>\nIl pleut") == "Il pleut")
+        #expect(LLMChunkedRewriter.clean("```text\nIl pleut\nsur la ville\n```") == "Il pleut\nsur la ville")
+        #expect(LLMChunkedRewriter.clean("\"Il pleut\"") == "Il pleut")
     }
 
     @Test("Retire les lignes vides ajoutées quand l'original n'en a pas")
@@ -110,9 +110,19 @@ struct LLMCorrectorTests {
         #expect(result == "Il pleut sur la ville\nJe pense à toi\nSous la pluie")
     }
 
-    @Test("Garde les lignes vides de l'original (couplets)")
-    func keepsStanzaBreaks() {
-        #expect(LLMCorrector.matchingBlankLines("A\n\nB", of: "a\n\nb") == "A\n\nB")
+    @Test("Les séparations de couplets ne sont pas envoyées au modèle et restent en place")
+    func keepsStanzaBreaks() async throws {
+        // Le modèle « oublie » la ligne vide, comme Mistral en conditions réelles.
+        let provider = MockLLMProvider { user in textToCorrect(in: user).uppercased() }
+        let result = try await corrector(provider).correct("un\ndeux\n\ntrois", language: "fr", quality: .max) { _ in }
+        #expect(result == "UN\nDEUX\n\nTROIS")
+        #expect(provider.calls.withLock { $0.first?.user } == "un\ndeux\ntrois")
+    }
+
+    @Test("Nombre de lignes différent : la réponse est gardée telle quelle")
+    func reinsertionNeedsMatchingLines() {
+        #expect(LLMChunkedRewriter.reinsertingBlankLines(of: ["a", "", "b"], into: ["A", "B"]) == ["A", "", "B"])
+        #expect(LLMChunkedRewriter.reinsertingBlankLines(of: ["a", "", "b"], into: ["A", "B", "C"]) == ["A", "B", "C"])
     }
 
     @Test("Transcription vide")

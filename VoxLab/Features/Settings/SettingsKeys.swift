@@ -9,6 +9,7 @@ nonisolated enum SettingsKey {
     static let llmProvider = "llm.provider"
     static let llmServerURL = "llm.server.baseURL"
     static let llmServerModel = "llm.server.model"
+    static let translateViaLLM = "translation.viaLLM"
 }
 
 /// Provider LLM utilisé pour la correction (et, plus tard, la traduction via LLM).

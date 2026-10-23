@@ -63,6 +63,8 @@ struct JobDetailView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            TargetLanguageView(job: job, isEditable: !isRunning)
+                .padding(.top, 6)
         }
     }
 

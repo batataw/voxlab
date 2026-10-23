@@ -55,4 +55,16 @@ struct JobControllerTests {
         let file = storage.directory(for: job.id).appending(path: "translation_en.txt")
         #expect(try String(contentsOf: file, encoding: .utf8) == "hello")
     }
+
+    @Test("Changer la langue cible rend la traduction existante obsolète")
+    func changingTargetLanguage() {
+        let job = makeJob()
+        controller.setTargetLanguage(.de, of: job)
+        #expect(job.targetLanguage == "de")
+        #expect(!job.isTranslationStale)
+
+        job.translation = "Regen"
+        controller.setTargetLanguage(.it, of: job)
+        #expect(job.isTranslationStale)
+    }
 }

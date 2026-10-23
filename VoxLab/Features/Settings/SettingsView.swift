@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.llmProvider) private var provider = LLMProviderChoice.automatic
     @AppStorage(SettingsKey.llmServerURL) private var serverURL = LLMServerSettings.defaults.baseURL
     @AppStorage(SettingsKey.llmServerModel) private var serverModel = LLMServerSettings.defaults.model
+    @AppStorage(SettingsKey.translateViaLLM) private var translateViaLLM = false
 
     @State private var viewModel = SettingsViewModel()
 
@@ -22,6 +23,16 @@ struct SettingsView: View {
                 .pickerStyle(.segmented)
             } footer: {
                 Text("Rapide : htdemucs, large-v3-turbo, Foundation Models. Max : htdemucs_ft, large-v3, serveur local.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle("Traduire via LLM", isOn: $translateViaLLM)
+            } header: {
+                Text("Traduction")
+            } footer: {
+                Text("Plus fidèle au registre familier et à l'argot qu'Apple Translation, mais plus lent. Utilise le provider de la correction.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -68,6 +79,7 @@ struct SettingsView: View {
                     serverURL = LLMServerSettings.defaults.baseURL
                     serverModel = LLMServerSettings.defaults.model
                     provider = .automatic
+                    translateViaLLM = false
                 }
             }
         }
