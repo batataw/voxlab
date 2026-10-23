@@ -1,12 +1,14 @@
 import Foundation
+import FoundationModels
 import os
 
-/// Outils externes dont dépend le pipeline.
+/// Outils et services externes dont dépend le pipeline.
 nonisolated enum Dependency: String, CaseIterable, Sendable, Identifiable {
     case ffmpeg
     case ytDlp
     case demucs
-    case ollama
+    case foundationModels
+    case llmServer
 
     var id: String { rawValue }
 
@@ -15,28 +17,36 @@ nonisolated enum Dependency: String, CaseIterable, Sendable, Identifiable {
         case .ffmpeg: "ffmpeg"
         case .ytDlp: "yt-dlp"
         case .demucs: "Demucs"
-        case .ollama: "Ollama"
+        case .foundationModels: "Apple Foundation Models"
+        case .llmServer: "Serveur LLM local"
         }
     }
 
-    /// Ollama n'est qu'un provider LLM alternatif.
-    var isRequired: Bool { self != .ollama }
+    /// Les deux providers LLM sont interchangeables : aucun n'est bloquant seul.
+    var isRequired: Bool {
+        switch self {
+        case .ffmpeg, .ytDlp, .demucs: true
+        case .foundationModels, .llmServer: false
+        }
+    }
 
     var installHint: String {
         switch self {
         case .ffmpeg: "brew install ffmpeg"
         case .ytDlp: "brew install yt-dlp"
-        case .demucs: "uv venv ~/.voxlab/venv && uv pip install --python ~/.voxlab/venv demucs"
-        case .ollama: "brew install ollama"
+        case .demucs: "uv venv --python 3.11 ~/.voxlab/venv && uv pip install --python ~/.voxlab/venv/bin/python demucs \"torch<2.9\" \"torchaudio<2.9\""
+        case .foundationModels: "Activer Apple Intelligence dans Réglages Système"
+        case .llmServer: "Lancer LM Studio et activer son serveur local"
         }
     }
 
-    func path(in paths: ToolPaths) -> String {
+    /// Chemin du binaire, pour les dépendances qui en sont un.
+    func path(in paths: ToolPaths) -> String? {
         switch self {
         case .ffmpeg: paths.ffmpeg
         case .ytDlp: paths.ytDlp
         case .demucs: paths.demucs
-        case .ollama: paths.ollama
+        case .foundationModels, .llmServer: nil
         }
     }
 
@@ -44,9 +54,10 @@ nonisolated enum Dependency: String, CaseIterable, Sendable, Identifiable {
     fileprivate var probeArguments: [String] {
         switch self {
         case .ffmpeg: ["-version"]
-        case .ytDlp, .ollama: ["--version"]
+        case .ytDlp: ["--version"]
         // Demucs n'a pas d'option de version ; `--help` charge torch, donc c'est un vrai test.
         case .demucs: ["--help"]
+        case .foundationModels, .llmServer: []
         }
     }
 
@@ -67,21 +78,32 @@ nonisolated enum DependencyState: Sendable, Equatable {
 
 nonisolated struct DependencyReport: Sendable, Equatable, Identifiable {
     var dependency: Dependency
-    var path: String
+    /// Chemin du binaire ou adresse du service.
+    var location: String
     var state: DependencyState
 
     var id: Dependency { dependency }
 }
 
+/// Ce que le diagnostic doit savoir pour vérifier chaque dépendance.
+nonisolated struct DiagnosticsSettings: Sendable, Equatable {
+    var toolPaths: ToolPaths
+    var llmServer: LLMServerSettings
+
+    static func load() -> DiagnosticsSettings {
+        DiagnosticsSettings(toolPaths: .load(), llmServer: .load())
+    }
+}
+
 nonisolated protocol DependencyChecking: Sendable {
-    func check(_ dependency: Dependency, paths: ToolPaths) async -> DependencyReport
+    func check(_ dependency: Dependency, settings: DiagnosticsSettings) async -> DependencyReport
 }
 
 extension DependencyChecking {
-    nonisolated func checkAll(paths: ToolPaths) async -> [DependencyReport] {
+    nonisolated func checkAll(settings: DiagnosticsSettings) async -> [DependencyReport] {
         await withTaskGroup(of: DependencyReport.self) { group in
             for dependency in Dependency.allCases {
-                group.addTask { await check(dependency, paths: paths) }
+                group.addTask { await check(dependency, settings: settings) }
             }
             var reports: [DependencyReport] = []
             for await report in group { reports.append(report) }
@@ -92,18 +114,37 @@ extension DependencyChecking {
     }
 }
 
-/// Vérifie la présence de chaque binaire puis lance un appel de contrôle.
+/// Vérifie chaque binaire (présence puis appel de contrôle) et chaque service LLM.
 nonisolated struct DependencyChecker: DependencyChecking {
     private static let logger = Logger(subsystem: "com.voxlab", category: "Diagnostics")
 
     let runner: any ProcessRunning
+    var transport: any HTTPTransport = URLSession.shared
+    var foundationModelsAvailability: @Sendable () -> String? = {
+        FoundationModelsError.unavailabilityReason(SystemLanguageModel.default.availability)
+    }
 
     @concurrent
-    func check(_ dependency: Dependency, paths: ToolPaths) async -> DependencyReport {
-        let path = dependency.path(in: paths)
+    func check(_ dependency: Dependency, settings: DiagnosticsSettings) async -> DependencyReport {
+        switch dependency {
+        case .foundationModels:
+            let reason = foundationModelsAvailability()
+            return DependencyReport(
+                dependency: dependency,
+                location: "Sur l'appareil",
+                state: reason.map { .broken(message: $0) } ?? .available(details: "Disponible")
+            )
+        case .llmServer:
+            return await checkServer(settings.llmServer)
+        case .ffmpeg, .ytDlp, .demucs:
+            return await checkBinary(dependency, path: dependency.path(in: settings.toolPaths) ?? "")
+        }
+    }
+
+    private func checkBinary(_ dependency: Dependency, path: String) async -> DependencyReport {
         let url = ToolPaths.url(for: path)
         let report = { (state: DependencyState) in
-            DependencyReport(dependency: dependency, path: path, state: state)
+            DependencyReport(dependency: dependency, location: path, state: state)
         }
 
         guard FileManager.default.isExecutableFile(atPath: url.path(percentEncoded: false)) else {
@@ -121,6 +162,22 @@ nonisolated struct DependencyChecker: DependencyChecking {
             return report(.available(details: Self.summary(of: result, for: dependency)))
         } catch {
             Self.logger.error("\(dependency.displayName, privacy: .public) en échec : \(error.localizedDescription, privacy: .public)")
+            return report(.broken(message: error.localizedDescription))
+        }
+    }
+
+    private func checkServer(_ server: LLMServerSettings) async -> DependencyReport {
+        let report = { (state: DependencyState) in
+            DependencyReport(dependency: .llmServer, location: server.baseURL, state: state)
+        }
+        let provider = OpenAICompatibleProvider(settings: { server }, transport: transport)
+        do {
+            let models = try await provider.listModels()
+            guard models.contains(server.model) else {
+                return report(.broken(message: LLMServerError.modelNotFound(model: server.model, available: models).localizedDescription))
+            }
+            return report(.available(details: "Modèle « \(server.model) » disponible"))
+        } catch {
             return report(.broken(message: error.localizedDescription))
         }
     }

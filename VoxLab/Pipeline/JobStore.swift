@@ -66,7 +66,9 @@ final class SwiftDataJobStore: JobStore {
         if let text = output.text {
             switch step {
             case .transcribe: job.rawTranscript = text
-            case .correct: job.correctedTranscript = text
+            case .correct:
+                job.correctedTranscript = text
+                if job.translation != nil { job.isTranslationStale = true }
             case .translate:
                 job.translation = text
                 job.isTranslationStale = false

@@ -8,11 +8,11 @@ final class DiagnosticsViewModel {
     private(set) var isChecking = false
 
     private let checker: any DependencyChecking
-    private let loadPaths: () -> ToolPaths
+    private let loadSettings: () -> DiagnosticsSettings
 
-    init(checker: any DependencyChecking, loadPaths: @escaping () -> ToolPaths = { ToolPaths.load() }) {
+    init(checker: any DependencyChecking, loadSettings: @escaping () -> DiagnosticsSettings = { DiagnosticsSettings.load() }) {
         self.checker = checker
-        self.loadPaths = loadPaths
+        self.loadSettings = loadSettings
     }
 
     /// Dépendances obligatoires absentes ou en échec.
@@ -26,6 +26,6 @@ final class DiagnosticsViewModel {
         guard !isChecking else { return }
         isChecking = true
         defer { isChecking = false }
-        reports = await checker.checkAll(paths: loadPaths())
+        reports = await checker.checkAll(settings: loadSettings())
     }
 }

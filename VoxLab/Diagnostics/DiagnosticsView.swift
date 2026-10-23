@@ -59,7 +59,7 @@ private struct DependencyRow: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                Text(report.path)
+                Text(report.location)
                     .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
@@ -83,7 +83,7 @@ private struct DependencyRow: View {
         case .broken(let message):
             Text(message)
                 .font(.caption)
-                .foregroundStyle(.red)
+                .foregroundStyle(report.dependency.isRequired ? .red : .orange)
                 .lineLimit(4)
                 .textSelection(.enabled)
         }

@@ -21,6 +21,12 @@ struct AppDependencies {
                 ImportStep(fileImporter: FileImporter(runner: runner, toolPaths: toolPaths), urlImporter: nil),
                 SeparateStep(separator: DemucsSeparator(runner: runner, toolPaths: toolPaths)),
                 TranscribeStep(transcriber: WhisperKitTranscriber()),
+                CorrectStep(corrector: LLMCorrector(provider: { quality in
+                    switch LLMProviderChoice.load().resolved(for: quality) {
+                    case .localServer: OpenAICompatibleProvider(settings: { LLMServerSettings.load() })
+                    case .foundationModels, .automatic: FoundationModelsProvider()
+                    }
+                })),
             ],
             store: store,
             storage: storage

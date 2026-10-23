@@ -31,7 +31,7 @@ private func argument(after flag: String, in arguments: [String]) -> String? {
 
 @Suite("DemucsSeparator")
 struct DemucsSeparatorTests {
-    let paths = ToolPaths(ffmpeg: "/bin/echo", ytDlp: "/bin/echo", demucs: "/bin/echo", ollama: "/bin/echo")
+    let paths = ToolPaths(ffmpeg: "/bin/echo", ytDlp: "/bin/echo", demucs: "/bin/echo")
 
     /// Simule Demucs : écrit `<-o>/<modèle>/vocals.wav` sauf sur les devices listés comme défaillants.
     private func fakeDemucs(failingDevices: Set<String>) -> ScriptedProcessRunner {
@@ -140,7 +140,7 @@ struct DemucsSeparatorTests {
 
 @Suite("FileImporter")
 struct FileImporterTests {
-    let paths = ToolPaths(ffmpeg: "/bin/echo", ytDlp: "/bin/echo", demucs: "/bin/echo", ollama: "/bin/echo")
+    let paths = ToolPaths(ffmpeg: "/bin/echo", ytDlp: "/bin/echo", demucs: "/bin/echo")
 
     @Test("Convertit en WAV 44,1 kHz stéréo via un fichier temporaire")
     func convertsToWav() async throws {
