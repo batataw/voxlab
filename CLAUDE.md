@@ -20,21 +20,24 @@ App macOS perso, **hors prod**, 100 % gratuite et locale :
 | Persistance | SwiftData (métadonnées et textes) ; fichiers audio sur disque |
 | Concurrence | Swift Concurrency (`async/await`, `actor`), Swift 6 strict concurrency |
 | Import YouTube | `yt-dlp` + `ffmpeg` (CLI, Homebrew) |
-| Isolation voix | Demucs `htdemucs_ft` par défaut (meilleure qualité, environ 4× plus lent), `htdemucs` en mode rapide ; `--two-stems vocals` (CLI Python, venv dédié) |
+| Isolation voix | Demucs `htdemucs_ft` par défaut (meilleure qualité, environ 3,5× plus lent : ≈ 62 s contre 18 s pour 3 min d'audio sur M1 Max), `htdemucs` en mode rapide ; `--two-stems vocals` (CLI Python, venv dédié) |
 | Transcription | WhisperKit (Swift Package, CoreML), `large-v3` par défaut, `large-v3-turbo` en mode rapide |
-| Correction | Apple Foundation Models par défaut ; Ollama (localhost) en provider alternatif |
+| Correction | Apple Foundation Models par défaut ; serveur local compatible OpenAI (LM Studio par défaut, Ollama possible) en provider alternatif |
 | Traduction | Apple Translation framework ; fallback via le même `LLMProvider` |
 
 ## Prérequis machine (hors app)
 
 ```bash
-brew install ffmpeg yt-dlp uv ollama   # ollama optionnel
-uv venv ~/.voxlab/venv && source ~/.voxlab/venv/bin/activate
-uv pip install demucs
+brew install ffmpeg yt-dlp uv
+uv venv --python 3.11 ~/.voxlab/venv
+uv pip install --python ~/.voxlab/venv/bin/python demucs "torch<2.9" "torchaudio<2.9"
+# LLM local (optionnel) : LM Studio (app), serveur activé sur le port 1234
 ```
 
+- torch/torchaudio sont bloqués sous 2.9 : torchaudio 2.9 a changé `torchaudio.save`, dont Demucs dépend.
 - L'app ne gère pas l'installation de ces outils. Elle **détecte leur présence** au lancement et affiche un écran de diagnostic s'il en manque un.
 - Les chemins des binaires sont configurables dans Réglages. Valeurs par défaut : `/opt/homebrew/bin/...` et `~/.voxlab/venv/bin/demucs`.
+- Le serveur LLM local n'est pas un binaire : le diagnostic vérifie qu'il répond sur `GET <baseURL>/models`. Il est optionnel.
 - Demucs : tester `-d mps`, avec repli automatique sur `-d cpu` en cas d'échec.
 
 ## Pipeline
@@ -79,7 +82,7 @@ VoxLab/
 │   ├── YtDlpImporter.swift, FileImporter.swift
 │   ├── DemucsSeparator.swift
 │   ├── WhisperKitTranscriber.swift
-│   ├── LLM/              # FoundationModelsProvider, OllamaProvider
+│   ├── LLM/              # FoundationModelsProvider, OpenAICompatibleProvider
 │   ├── LLMCorrector.swift
 │   └── AppleTranslator.swift
 ├── Features/
@@ -105,10 +108,13 @@ Règles :
   - ne rien inventer ni réécrire : en cas de doute, garder l'original ;
   - répondre uniquement par le texte corrigé.
 - Foundation Models : contexte limité. Si le texte dépasse la limite, on découpe par blocs de couplets en gardant un recouvrement.
-- Ollama : modèle configurable, appelé via `POST http://localhost:11434/api/generate` avec `stream: false`.
-  - Défaut : `mistral-small` (24B, bon en langues européennes, environ 15 Go en Q4).
-  - Alternative : `qwen2.5:32b`. Les 64 Go le permettent, mais il est plus lent.
-- Réglage « Qualité » : `rapide` (htdemucs, large-v3-turbo, Foundation Models) ou `max` (htdemucs_ft, large-v3, Ollama). Défaut : `max`.
+- Serveur local compatible OpenAI : `OpenAICompatibleProvider`, appelé via `POST <baseURL>/chat/completions` avec `stream: false`.
+  - URL de base configurable. Défaut : LM Studio, `http://localhost:1234/v1`. Ollama fonctionne aussi avec `http://localhost:11434/v1`.
+  - Modèle configurable (identifiant tel que listé par `GET <baseURL>/models`).
+  - Défaut : Mistral Small 3.2 24B en MLX 4 bits (bon en langues européennes, environ 13 Go).
+  - Alternative : Qwen2.5 32B. Les 64 Go le permettent, mais il est plus lent.
+  - Pas de modèle de raisonnement (type R1) : sortie trop verbeuse pour une correction.
+- Réglage « Qualité » : `rapide` (htdemucs, large-v3-turbo, Foundation Models) ou `max` (htdemucs_ft, large-v3, serveur local). Défaut : `max`.
 
 ## Traduction
 
@@ -148,7 +154,7 @@ Sous-titres et horodatage, iOS, distribution, multi-utilisateur, API cloud, trai
 1. Squelette app, modèles SwiftData, `ProcessRunner` et écran Diagnostics.
 2. Import fichier, Separate (Demucs). Valider tôt les temps de traitement et la RAM.
 3. Transcribe (WhisperKit).
-4. Correct (Foundation Models, puis Ollama).
+4. Correct (Foundation Models, puis serveur local compatible OpenAI).
 5. Translate.
 6. Import YouTube.
 7. Finitions UI de l'historique (recherche, suppression des fichiers d'un job).
