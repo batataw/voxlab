@@ -16,19 +16,16 @@ actor PipelineRunner {
     private let steps: [Step: any PipelineStep]
     private let store: any JobStore
     private let storage: JobStorage
-    private let quality: @Sendable () -> QualityMode
     private var tasks: [UUID: Task<Void, Never>] = [:]
 
     init(
         steps: [any PipelineStep],
         store: any JobStore,
-        storage: JobStorage,
-        quality: @escaping @Sendable () -> QualityMode = { QualityMode.load() }
+        storage: JobStorage
     ) {
         self.steps = Dictionary(uniqueKeysWithValues: steps.map { ($0.step, $0) })
         self.store = store
         self.storage = storage
-        self.quality = quality
     }
 
     /// Lance le pipeline pour un job. Sans effet si ce job tourne déjà.
@@ -96,7 +93,7 @@ actor PipelineRunner {
             source: snapshot.source,
             targetLanguage: snapshot.targetLanguage,
             detectedLanguage: snapshot.detectedLanguage,
-            quality: quality()
+            quality: snapshot.quality
         )
 
         // La progression transite par un flux pour être appliquée dans l'ordre, avant le statut final.

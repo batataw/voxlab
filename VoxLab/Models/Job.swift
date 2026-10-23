@@ -13,6 +13,9 @@ final class Job {
     /// Code langue BCP-47 (« fr », « en »…).
     var targetLanguage: String
     var detectedLanguage: String?
+    /// Qualité figée à la création : une étape relancée garde la qualité d'origine du job.
+    /// Valeur par défaut nécessaire à la migration des jobs créés avant ce champ.
+    var qualityRaw: String = QualityMode.max.rawValue
 
     // Les textes sont dupliqués ici (en plus des fichiers) pour l'affichage et la recherche.
     var rawTranscript: String?
@@ -30,6 +33,7 @@ final class Job {
         sourceKind: SourceKind,
         sourceReference: String,
         targetLanguage: String,
+        quality: QualityMode = .max,
         createdAt: Date = .now
     ) {
         self.id = id
@@ -38,8 +42,13 @@ final class Job {
         self.sourceKindRaw = sourceKind.rawValue
         self.sourceReference = sourceReference
         self.targetLanguage = targetLanguage
+        self.qualityRaw = quality.rawValue
         self.isTranslationStale = false
         self.stepRuns = Step.allCases.map(StepRun.init(step:))
+    }
+
+    var quality: QualityMode {
+        QualityMode(rawValue: qualityRaw) ?? .max
     }
 
     var sourceKind: SourceKind {

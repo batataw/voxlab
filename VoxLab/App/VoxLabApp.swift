@@ -6,6 +6,7 @@ struct VoxLabApp: App {
     private let dependencies: AppDependencies
     private let modelContainer: ModelContainer
     @State private var diagnostics: DiagnosticsViewModel
+    @State private var navigation = AppNavigation()
 
     init() {
         let modelContainer = Self.makeModelContainer()
@@ -17,26 +18,22 @@ struct VoxLabApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(diagnostics: diagnostics)
+            RootView(diagnostics: diagnostics, navigation: navigation)
                 .environment(dependencies.jobController)
+                .frame(minWidth: 820, minHeight: 560)
         }
         .modelContainer(modelContainer)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("Nouveau job…") {
-                    NotificationCenter.default.post(name: .showNewJob, object: nil)
-                }
-                .keyboardShortcut("n")
+                Button("Nouveau job") { navigation.show(.newJob) }
+                    .keyboardShortcut("n")
             }
-            CommandGroup(after: .appSettings) {
-                Button("Diagnostic des dépendances…") {
-                    NotificationCenter.default.post(name: .showDiagnostics, object: nil)
-                }
+            // Les réglages sont une section de la fenêtre, pas une fenêtre séparée.
+            CommandGroup(replacing: .appSettings) {
+                Button("Réglages…") { navigation.show(.settings) }
+                    .keyboardShortcut(",")
+                Button("Diagnostics") { navigation.show(.diagnostics) }
             }
-        }
-
-        Settings {
-            SettingsView()
         }
     }
 
@@ -64,9 +61,4 @@ struct VoxLabApp: App {
             fatalError("Impossible d'ouvrir la base SwiftData : \(error)")
         }
     }
-}
-
-extension Notification.Name {
-    static let showDiagnostics = Notification.Name("VoxLab.showDiagnostics")
-    static let showNewJob = Notification.Name("VoxLab.showNewJob")
 }

@@ -3,72 +3,86 @@ import SwiftUI
 
 struct RootView: View {
     let diagnostics: DiagnosticsViewModel
-
-    @State private var selectedJobID: PersistentIdentifier?
-    @State private var isShowingDiagnostics = false
-    @State private var isShowingNewJob = false
+    @Bindable var navigation: AppNavigation
 
     var body: some View {
         NavigationSplitView {
-            HistoryView(selection: $selectedJobID)
-                .navigationSplitViewColumnWidth(min: 220, ideal: 260)
+            Sidebar(navigation: navigation, diagnostics: diagnostics)
+                .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 260)
         } detail: {
-            JobDetailContainer(jobID: selectedJobID)
-        }
-        .toolbar {
-            ToolbarItem(placement: .navigation) {
-                Button("Nouveau job", systemImage: "plus") { isShowingNewJob = true }
-                    .help("Nouveau job (⌘N)")
+            switch navigation.section {
+            case .newJob:
+                NewJobPage(navigation: navigation)
+            case .history:
+                HistoryPage(navigation: navigation)
+            case .diagnostics:
+                DiagnosticsPage(viewModel: diagnostics)
+            case .settings:
+                SettingsPage()
             }
-            ToolbarItem {
-                Button {
-                    isShowingDiagnostics = true
-                } label: {
-                    Label("Diagnostic", systemImage: diagnosticsSymbol)
-                }
-                .help("Diagnostic des dépendances externes")
-            }
-        }
-        .sheet(isPresented: $isShowingDiagnostics) {
-            DiagnosticsView(viewModel: diagnostics)
-        }
-        .sheet(isPresented: $isShowingNewJob) {
-            NewJobView { job in selectedJobID = job.persistentModelID }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .showNewJob)) { _ in
-            isShowingNewJob = true
         }
         .task {
             await diagnostics.refresh()
             if !diagnostics.missingRequired.isEmpty {
-                isShowingDiagnostics = true
+                navigation.show(.diagnostics)
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .showDiagnostics)) { _ in
-            isShowingDiagnostics = true
-        }
-    }
-
-    private var diagnosticsSymbol: String {
-        guard diagnostics.hasCheckedOnce else { return "stethoscope" }
-        return diagnostics.missingRequired.isEmpty ? "stethoscope" : "exclamationmark.triangle"
     }
 }
 
-/// Résout l'identifiant sélectionné en `Job` dans le contexte courant.
-private struct JobDetailContainer: View {
-    let jobID: PersistentIdentifier?
-    @Environment(\.modelContext) private var modelContext
+private struct Sidebar: View {
+    @Bindable var navigation: AppNavigation
+    let diagnostics: DiagnosticsViewModel
 
     var body: some View {
-        if let jobID, let job = modelContext.model(for: jobID) as? Job {
-            JobDetailView(job: job)
-        } else {
-            ContentUnavailableView(
-                "Aucun job sélectionné",
-                systemImage: "waveform",
-                description: Text("Choisissez un job dans l'historique.")
-            )
+        VStack(spacing: 2) {
+            ForEach(AppSection.main) { section in
+                SidebarRow(section: section, navigation: navigation, badge: badge(for: section))
+            }
+            Spacer()
+            SidebarRow(section: .settings, navigation: navigation, badge: nil)
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 12)
+    }
+
+    private func badge(for section: AppSection) -> Color? {
+        guard section == .diagnostics, diagnostics.hasCheckedOnce, !diagnostics.missingRequired.isEmpty else { return nil }
+        return .orange
+    }
+}
+
+private struct SidebarRow: View {
+    let section: AppSection
+    @Bindable var navigation: AppNavigation
+    let badge: Color?
+
+    private var isSelected: Bool { navigation.section == section }
+
+    var body: some View {
+        Button {
+            navigation.show(section)
+        } label: {
+            HStack(spacing: 10) {
+                IconTile(systemImage: section.systemImage, color: badge ?? section.color)
+                Text(section.title)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(isSelected ? .white : .primary)
+                Spacer()
+                if badge != nil {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .foregroundStyle(isSelected ? .white : .orange)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 8).fill(Color.accentColor)
+                }
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
     }
 }

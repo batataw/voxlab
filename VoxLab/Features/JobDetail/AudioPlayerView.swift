@@ -69,15 +69,12 @@ struct AudioPlayerView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Button {
+            RoundIconButton(title: model.isPlaying ? "Pause" : "Lecture", systemImage: model.isPlaying ? "pause.fill" : "play.fill") {
                 model.togglePlayback()
-            } label: {
-                Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
-                    .frame(width: 16)
             }
-            .buttonStyle(.borderless)
             Text(title)
-                .frame(width: 60, alignment: .leading)
+                .font(.callout.weight(.medium))
+                .frame(width: 50, alignment: .leading)
             Slider(value: Binding(get: { model.currentTime }, set: { model.seek(to: $0) }), in: 0...max(model.duration, 1))
                 .controlSize(.small)
             Text(Duration.seconds(model.currentTime), format: .time(pattern: .minuteSecond))

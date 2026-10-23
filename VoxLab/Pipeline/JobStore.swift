@@ -8,6 +8,7 @@ nonisolated struct JobSnapshot: Sendable, Equatable {
     var source: JobSource
     var targetLanguage: String
     var detectedLanguage: String?
+    var quality: QualityMode
     var statuses: [Step: StepStatus]
 
     /// Première étape non terminée, dans l'ordre du pipeline.
@@ -43,6 +44,7 @@ final class SwiftDataJobStore: JobStore {
             source: job.source,
             targetLanguage: job.targetLanguage,
             detectedLanguage: job.detectedLanguage,
+            quality: job.quality,
             statuses: Dictionary(uniqueKeysWithValues: job.stepRuns.map { ($0.step, $0.status) })
         )
     }

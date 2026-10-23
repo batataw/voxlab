@@ -64,12 +64,12 @@ struct PipelineRunnerTests {
         container = try ModelContainer(for: Job.self, StepRun.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
         store = SwiftDataJobStore(context: container.mainContext)
         storage = JobStorage(rootDirectory: FileManager.default.temporaryDirectory.appending(path: "voxlab-pipeline-\(UUID().uuidString)"))
-        job = Job(title: "Test", sourceKind: .file, sourceReference: "/tmp/a.wav", targetLanguage: "fr")
+        job = Job(title: "Test", sourceKind: .file, sourceReference: "/tmp/a.wav", targetLanguage: "fr", quality: .fast)
         container.mainContext.insert(job)
     }
 
     private func makeRunner(_ steps: [any PipelineStep]) -> PipelineRunner {
-        PipelineRunner(steps: steps, store: store, storage: storage, quality: { .fast })
+        PipelineRunner(steps: steps, store: store, storage: storage)
     }
 
     private func run(_ runner: PipelineRunner, scope: PipelineScope = .resume) async {
@@ -100,6 +100,14 @@ struct PipelineRunnerTests {
         #expect(job.translation == "traduit")
         #expect(job.detectedLanguage == "en")
         #expect(job.stepRuns.allSatisfy { $0.progress == 1 })
+    }
+
+    @Test("L'étape reçoit la qualité du job, pas le réglage global")
+    func stepUsesJobQuality() async {
+        let seen = CapturedContext()
+        let runner = makeRunner([ContextCapturingStep(captured: seen)])
+        await run(runner, scope: .only(.import))
+        #expect(seen.quality.withLock { $0 } == .fast)
     }
 
     @Test("S'arrête avant une étape non implémentée")
@@ -170,5 +178,20 @@ struct PipelineRunnerTests {
         store.recoverInterruptedRuns()
         #expect(status(.separate) == .failed)
         #expect(job.resumeStep == .import)
+    }
+}
+
+final class CapturedContext: Sendable {
+    let quality = Mutex<QualityMode?>(nil)
+}
+
+/// Étape factice qui mémorise la qualité reçue dans son contexte.
+struct ContextCapturingStep: PipelineStep {
+    let step = Step.import
+    let captured: CapturedContext
+
+    func run(_ context: StepContext, onProgress: @escaping @Sendable (Double) -> Void) async throws -> StepOutput {
+        captured.quality.withLock { $0 = context.quality }
+        return StepOutput()
     }
 }

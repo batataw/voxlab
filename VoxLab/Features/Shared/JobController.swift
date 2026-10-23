@@ -26,7 +26,8 @@ final class JobController {
             title: fileURL.deletingPathExtension().lastPathComponent,
             sourceKind: .file,
             sourceReference: fileURL.path(percentEncoded: false),
-            targetLanguage: targetLanguage.rawValue
+            targetLanguage: targetLanguage.rawValue,
+            quality: QualityMode.load()
         )
         context.insert(job)
         save()
@@ -41,7 +42,8 @@ final class JobController {
             title: "YouTube – \(youtubeURL.absoluteString)",
             sourceKind: .youtube,
             sourceReference: youtubeURL.absoluteString,
-            targetLanguage: targetLanguage.rawValue
+            targetLanguage: targetLanguage.rawValue,
+            quality: QualityMode.load()
         )
         context.insert(job)
         save()

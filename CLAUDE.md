@@ -16,7 +16,7 @@ App macOS perso, **hors prod**, 100 % gratuite et locale :
 
 | Couche | Choix |
 |---|---|
-| UI | SwiftUI (macOS), `NavigationSplitView` avec l'historique à gauche et le détail du job à droite |
+| UI | SwiftUI (macOS), `NavigationSplitView` : barre latérale de sections (Nouveau, Historique, Diagnostics, Réglages), contenu en cartes (voir `docs/plans/2026-10-23-ui-redesign-design.md`) |
 | Persistance | SwiftData (métadonnées et textes) dans `~/Library/Application Support/VoxLab/VoxLab.store` (jamais le `default.store` par défaut, partagé entre apps hors sandbox) ; fichiers audio sur disque ; modèles Whisper dans `…/VoxLab/models` |
 | Concurrence | Swift Concurrency (`async/await`, `actor`), Swift 6 strict concurrency |
 | Import YouTube | `yt-dlp` + `ffmpeg` (CLI, Homebrew) |
@@ -86,7 +86,9 @@ VoxLab/
 │   ├── LLMCorrector.swift
 │   └── AppleTranslator.swift
 ├── Features/
-│   ├── History/          # liste des jobs, recherche, suppression
+│   ├── Navigation/       # sections de la barre latérale, état de navigation
+│   ├── Shared/Design/    # composants visuels communs (cartes, étiquettes, pastilles)
+│   ├── History/          # cartes des jobs, recherche, suppression
 │   ├── JobDetail/        # timeline des étapes, textes, actions par étape
 │   ├── NewJob/           # drag & drop fichier, champ URL, langue cible
 │   └── Settings/         # chemins binaires, modèle Whisper, provider LLM
@@ -125,6 +127,8 @@ Règles :
 
 ## UI
 
+- Style : barre latérale de sections à pastilles colorées ; pages en cartes arrondies avec bande d'étiquettes en pilule. Composants communs dans `Features/Shared/Design/` (`Card`, `Chip`, `IconTile`, `StatusPill`, `PageHeader`…) : tout nouvel écran les réutilise.
+- Historique : jobs en cartes (statut, langues, qualité, durée), recherche dans les titres et les textes ; une carte ouvre le détail.
 - Nouveau job : zone de drag & drop **ou** champ URL, choix de la langue cible, bouton Lancer.
 - Détail du job : timeline des 5 étapes avec statut, progression, durée et bouton « relancer cette étape ».
 - Lecteur audio minimal (AVFoundation) pour `source.wav` et `vocals.wav`.

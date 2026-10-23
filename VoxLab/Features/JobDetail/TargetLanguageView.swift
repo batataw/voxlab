@@ -17,17 +17,30 @@ struct TargetLanguageView: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            Picker("Langue cible", selection: Binding(
-                get: { target },
-                set: { controller.setTargetLanguage($0, of: job) }
-            )) {
-                ForEach(SupportedLanguage.allCases) { language in
-                    Text(language.displayName).tag(language)
+        HStack(spacing: 6) {
+            Chip(text: detectedLabel, systemImage: "waveform")
+            Image(systemName: "arrow.right")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Menu {
+                Picker("Langue cible", selection: Binding(
+                    get: { target },
+                    set: { controller.setTargetLanguage($0, of: job) }
+                )) {
+                    ForEach(SupportedLanguage.allCases) { language in
+                        Text(language.displayName).tag(language)
+                    }
                 }
+                .pickerStyle(.inline)
+            } label: {
+                Chip(text: target.displayName, systemImage: "globe", tint: .accentColor)
             }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
             .fixedSize()
             .disabled(!isEditable)
+            .help("Changer la langue cible")
 
             pairStatus
             Spacer()
@@ -49,15 +62,11 @@ struct TargetLanguageView: View {
     @ViewBuilder
     private var pairStatus: some View {
         if controller.translatesViaLLM {
-            Label("Traduction via LLM", systemImage: "sparkles")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Chip(text: "Traduction via LLM", systemImage: "sparkles")
         } else if let source = job.detectedLanguage, source != job.targetLanguage {
             switch status {
             case .installed:
-                Label("Langues installées", systemImage: "checkmark.circle")
-                    .font(.caption)
-                    .foregroundStyle(.green)
+                Chip(text: "Langues installées", systemImage: "checkmark.circle.fill", tint: .green)
             case .downloadable:
                 Button("Télécharger \(LanguageName.french(for: source)) → \(target.displayName.lowercased())", systemImage: "arrow.down.circle") {
                     downloadConfiguration = TranslationSession.Configuration(
@@ -67,9 +76,7 @@ struct TargetLanguageView: View {
                 }
                 .controlSize(.small)
             case .unsupported:
-                Label("Paire non prise en charge par Apple : activez « Traduire via LLM »", systemImage: "exclamationmark.triangle")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                Chip(text: "Paire non prise en charge : activez « Traduire via LLM »", systemImage: "exclamationmark.triangle.fill", tint: .orange)
             case nil:
                 EmptyView()
             }
@@ -79,6 +86,10 @@ struct TargetLanguageView: View {
                     .foregroundStyle(.red)
             }
         }
+    }
+
+    private var detectedLabel: String {
+        job.detectedLanguage.map { "\(LanguageName.french(for: $0).capitalized) détecté" } ?? "Langue à détecter"
     }
 
     private func refresh() async {

@@ -11,8 +11,12 @@ struct TranscriptTabsView: View {
     @State private var draft = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
+        SectionCard(title: "Textes") {
+            HStack(spacing: 8) {
+                if selection == .translated, job.isTranslationStale {
+                    Chip(text: "Obsolète", systemImage: "exclamationmark.triangle.fill", tint: .orange)
+                        .help("Le texte corrigé a été modifié depuis la traduction.")
+                }
                 Picker("Texte", selection: $selection) {
                     ForEach(TranscriptKind.allCases) { kind in
                         Text(kind.displayName).tag(kind)
@@ -20,22 +24,14 @@ struct TranscriptTabsView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(maxWidth: 300)
-
-                if selection == .translated, job.isTranslationStale {
-                    Label("Obsolète", systemImage: "exclamationmark.triangle")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                        .help("Le texte corrigé a été modifié depuis la traduction.")
-                }
-                Spacer()
-                Button("Copier", systemImage: "doc.on.doc") {
+                .fixedSize()
+                RoundIconButton(title: "Copier", systemImage: "doc.on.doc") {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(draft, forType: .string)
                 }
                 .disabled(draft.isEmpty)
             }
-
+        } content: {
             if job.text(selection) == nil {
                 Text("Pas encore de texte : l'étape « \(selection.producingStep.displayName) » n'a pas été exécutée.")
                     .foregroundStyle(.secondary)
@@ -43,8 +39,11 @@ struct TranscriptTabsView: View {
             } else {
                 TextEditor(text: $draft)
                     .font(.body)
-                    .frame(minHeight: 280)
+                    .lineSpacing(3)
+                    .frame(minHeight: 320)
                     .scrollContentBackground(.hidden)
+                    .padding(8)
+                    .background(Color.primary.opacity(0.03), in: .rect(cornerRadius: 8))
                     .disabled(!isEditable)
             }
         }
